@@ -196,3 +196,85 @@ CHART_DATA = {
         {"element": "Style Matching", "negative": -0.10, "positive": -5.40},
     ],
 }
+
+# Curated sample reviews for Practice mode
+SAMPLE_REVIEWS = [
+    {
+        "id": "n1",
+        "type": "negative",
+        "topic": "noise + service",
+        "text": (
+            "Booked a king suite for our anniversary. The AC was broken so the room "
+            "stayed around 80°F all night, and there was construction outside starting "
+            "at 6am that no one warned us about. When we asked to switch rooms, the "
+            "front desk said they were 'fully booked' but I could see empty rooms on "
+            "the booking site. Pretty disappointing for the price."
+        ),
+    },
+    {
+        "id": "n2",
+        "type": "negative",
+        "topic": "cleanliness",
+        "text": (
+            "The room looked nothing like the photos. There was hair in the bathtub, "
+            "the carpet had visible stains, and the sheets smelled musty. Housekeeping "
+            "didn't come on day 2 even though we left the room by 10am. For $280/night "
+            "I expected basic cleanliness."
+        ),
+    },
+    {
+        "id": "n3",
+        "type": "negative",
+        "topic": "billing",
+        "text": (
+            "Got charged $75 for 'resort fees' that were never disclosed at booking, "
+            "plus a $50 'incidentals hold' that's been on my card for 9 days now. "
+            "When I called the front desk they just said it was 'standard policy' "
+            "with no explanation. Won't be coming back."
+        ),
+    },
+    {
+        "id": "n4",
+        "type": "negative",
+        "topic": "staff attitude",
+        "text": (
+            "Our flight was delayed and we arrived around 2am. The night clerk was "
+            "openly annoyed that we were checking in late and made a comment about "
+            "'people who can't read confirmation emails.' Our reservation was fine, "
+            "we were just tired. Not the welcome you'd expect from a 4-star hotel."
+        ),
+    },
+    {
+        "id": "p1",
+        "type": "positive",
+        "topic": "staff",
+        "text": (
+            "We had the most wonderful stay. The concierge, Maria, went out of her "
+            "way to get us last-minute tickets to a sold-out show, and the breakfast "
+            "staff remembered our coffee order by day 2. The room was spotless and "
+            "the bed was incredibly comfortable. Already planning our return."
+        ),
+    },
+    {
+        "id": "p2",
+        "type": "positive",
+        "topic": "location + amenities",
+        "text": (
+            "Perfect location — walking distance to everything we wanted to see. The "
+            "rooftop bar at sunset was a highlight, and the gym was actually well-"
+            "equipped (rare for hotels). Room was modern and quiet despite being in "
+            "the city center. Worth every penny."
+        ),
+    },
+    {
+        "id": "p3",
+        "type": "positive",
+        "topic": "family-friendly",
+        "text": (
+            "Traveled with two kids under 5 and the staff couldn't have been more "
+            "accommodating. They had a crib waiting in the room, the pool had "
+            "shallow-end toys for kids, and the kitchen made off-menu kid food "
+            "without us even asking. Made the whole trip easier."
+        ),
+    },
+]

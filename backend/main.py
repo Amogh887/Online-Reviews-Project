@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,7 +9,7 @@ from pydantic import BaseModel, field_validator
 
 load_dotenv()
 
-from analyzer import analyze
+import coach
 from findings import CHART_DATA, HEADLINE_STATS
 
 app = FastAPI(title="Review Response Coach")
@@ -23,31 +22,83 @@ app.add_middleware(
 )
 
 
-class AnalyzeRequest(BaseModel):
+class GenerateRequest(BaseModel):
+    review: str
+    review_type: str
+
+    @field_validator("review_type")
+    @classmethod
+    def _check_type(cls, v: str) -> str:
+        if v not in ("positive", "negative"):
+            raise ValueError("review_type must be 'positive' or 'negative'")
+        return v
+
+    @field_validator("review")
+    @classmethod
+    def _check_review(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("review must not be empty")
+        return v.strip()
+
+
+class PracticeRequest(BaseModel):
     review: str
     response: str
     review_type: str
 
     @field_validator("review_type")
     @classmethod
-    def validate_review_type(cls, v: str) -> str:
+    def _check_type(cls, v: str) -> str:
         if v not in ("positive", "negative"):
             raise ValueError("review_type must be 'positive' or 'negative'")
         return v
 
     @field_validator("review", "response")
     @classmethod
-    def not_empty(cls, v: str) -> str:
+    def _check_text(cls, v: str) -> str:
         if not v.strip():
-            raise ValueError("Field must not be empty")
+            raise ValueError("field must not be empty")
         return v.strip()
 
 
-@app.post("/api/analyze")
-async def api_analyze(req: AnalyzeRequest):
+class SampleGenRequest(BaseModel):
+    review_type: str
+
+    @field_validator("review_type")
+    @classmethod
+    def _check_type(cls, v: str) -> str:
+        if v not in ("positive", "negative"):
+            raise ValueError("review_type must be 'positive' or 'negative'")
+        return v
+
+
+@app.post("/api/generate")
+async def api_generate(req: GenerateRequest):
     try:
-        result = analyze(req.review, req.response, req.review_type)
-        return result
+        return coach.generate_response(req.review, req.review_type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/practice")
+async def api_practice(req: PracticeRequest):
+    try:
+        return coach.practice_critique(req.review, req.response, req.review_type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/samples")
+async def api_samples(review_type: str | None = None):
+    if review_type and review_type not in ("positive", "negative"):
+        raise HTTPException(status_code=400, detail="review_type must be 'positive', 'negative', or omitted")
+    return {"samples": coach.list_samples(review_type)}
+
+
+@app.post("/api/samples/generate")
+async def api_sample_generate(req: SampleGenRequest):
+    try:
+        return coach.generate_sample_review(req.review_type)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

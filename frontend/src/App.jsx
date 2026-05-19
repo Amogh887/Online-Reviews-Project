@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Dashboard from "./components/Dashboard";
-import Analyzer from "./components/Analyzer";
+import Generate from "./components/Generate";
+import Practice from "./components/Practice";
 
 const TABS = [
   { id: "dashboard", label: "Research Findings" },
-  { id: "analyzer", label: "Response Analyzer" },
+  { id: "generate", label: "Generate Response" },
+  { id: "practice", label: "Practice Mode" },
 ];
 
 export default function App() {
@@ -43,7 +45,8 @@ export default function App() {
       {/* Page content */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === "dashboard" && <Dashboard />}
-        {activeTab === "analyzer" && <Analyzer />}
+        {activeTab === "generate" && <Generate />}
+        {activeTab === "practice" && <Practice />}
       </main>
     </div>
   );
