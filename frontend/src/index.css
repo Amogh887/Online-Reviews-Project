@@ -1,3 +1,74 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html, body {
+    background-color: #f0ece4;
+    color: #3a3a35;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: #c9a84c;
+    color: #1a1a18;
+  }
+}
+
+@layer components {
+  .label-mono {
+    @apply font-mono text-xs tracking-wide text-amber-accent uppercase;
+  }
+  .headline-serif {
+    @apply font-serif font-bold leading-[1.05] tracking-tight;
+  }
+  .headline-serif em {
+    @apply not-italic;
+    font-style: italic;
+    color: #c9a84c;
+    font-weight: 700;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-colors;
+    background-color: #d4b896;
+    color: #1a1a18;
+  }
+  .btn-primary:hover {
+    background-color: #c9a84c;
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors;
+    border-color: #c9a84c;
+    color: #c9a84c;
+    background-color: transparent;
+  }
+  .btn-outline:hover {
+    background-color: #c9a84c;
+    color: #1a1a18;
+  }
+  .card {
+    @apply bg-white rounded-2xl p-8 shadow-card;
+  }
+  .card-dark {
+    @apply rounded-2xl p-8;
+    background-color: #22221f;
+    border: 1px solid #2e2e2a;
+  }
+}
+
+@layer utilities {
+  .stagger > * {
+    opacity: 0;
+    animation: fadeUp 0.55s ease-out forwards;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .stagger > *:nth-child(3) { animation-delay: 200ms; }
+  .stagger > *:nth-child(4) { animation-delay: 300ms; }
+  .stagger > *:nth-child(5) { animation-delay: 400ms; }
+  .stagger > *:nth-child(6) { animation-delay: 500ms; }
+}

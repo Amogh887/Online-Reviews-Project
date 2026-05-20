@@ -33,17 +33,20 @@ const REVENUE_DATA = [
   { element: "Style Matching", negative: -0.1, positive: -5.4 },
 ];
 
+const POSITIVE_COLOR = "#5b8a5a";   // muted green
+const NEGATIVE_COLOR = "#b94a3d";   // muted brick red
+const POSITIVE_SOFT = "#7ea878";
+const NEGATIVE_SOFT = "#d97a6c";
+
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-lg text-sm">
-      <p className="font-semibold text-gray-100 mb-1">{label}</p>
+    <div className="bg-ink-800 border border-ink-700 rounded-lg p-3 shadow-lg text-sm">
+      <p className="font-semibold text-white mb-1">{label}</p>
       {payload.map((p) =>
         p.value != null ? (
-          <p key={p.dataKey} style={{ color: p.color }} className="text-xs">
-            {p.name}: {p.value > 0 ? "+" : ""}
-            {p.value}
-            {unit}
+          <p key={p.dataKey} style={{ color: p.color }} className="text-xs font-mono">
+            {p.name}: {p.value > 0 ? "+" : ""}{p.value}{unit}
           </p>
         ) : null
       )}
@@ -51,48 +54,48 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
   );
 };
 
-const barColor = (value) => {
+const barColor = (value, soft = false) => {
   if (value === null || value === undefined) return "transparent";
-  if (value > 0) return "#16a34a";
-  if (value < 0) return "#dc2626";
+  if (value > 0) return soft ? POSITIVE_SOFT : POSITIVE_COLOR;
+  if (value < 0) return soft ? NEGATIVE_SOFT : NEGATIVE_COLOR;
   return "#9ca3af";
 };
 
 function GroupedBarChart({ data, unit, title, subtitle }) {
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-700 p-6">
-      <h3 className="text-base font-semibold text-white">{title}</h3>
-      <p className="text-xs text-gray-400 mt-1 mb-4">{subtitle}</p>
+    <div className="card">
+      <h3 className="font-serif text-2xl font-bold text-ink">{title}</h3>
+      <p className="text-xs text-ink-500 mt-1 mb-5 font-mono">{subtitle}</p>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={data}
-          margin={{ top: 8, right: 16, left: 8, bottom: 60 }}
+          margin={{ top: 8, right: 8, left: 0, bottom: 60 }}
           barCategoryGap="30%"
           barGap={4}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e6e1d6" />
           <XAxis
             dataKey="element"
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#5a5a52" }}
             angle={-35}
             textAnchor="end"
             interval={0}
             height={72}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#5a5a52" }}
             tickFormatter={(v) => `${v > 0 ? "+" : ""}${v}${unit}`}
           />
-          <ReferenceLine y={0} stroke="#d1d5db" strokeWidth={1.5} />
+          <ReferenceLine y={0} stroke="#3a3a35" strokeWidth={1} />
           <Tooltip
             content={<CustomTooltip unit={unit} />}
-            cursor={{ fill: "#f9fafb" }}
+            cursor={{ fill: "rgba(201,168,76,0.08)" }}
           />
           <Legend
             verticalAlign="top"
             height={28}
             formatter={(value) => (
-              <span className="text-xs text-gray-400">{value}</span>
+              <span className="text-xs text-ink-500">{value}</span>
             )}
           />
           <Bar dataKey="negative" name="Negative review response" radius={[3, 3, 0, 0]}>
@@ -102,13 +105,13 @@ function GroupedBarChart({ data, unit, title, subtitle }) {
           </Bar>
           <Bar dataKey="positive" name="Positive review response" radius={[3, 3, 0, 0]}>
             {data.map((entry, idx) => (
-              <Cell key={idx} fill={entry.positive != null ? (entry.positive > 0 ? "#4ade80" : "#f87171") : "transparent"} opacity={entry.positive == null ? 0 : 1} />
+              <Cell key={idx} fill={barColor(entry.positive, true)} opacity={entry.positive == null ? 0 : 1} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <p className="text-xs text-gray-600 text-center mt-2">
-        Green = positive effect &nbsp;·&nbsp; Red = negative effect &nbsp;·&nbsp; Missing bar = not applicable
+      <p className="text-xs text-ink-500 text-center mt-3">
+        Green = positive effect · Red = negative effect · Missing bar = not applicable
       </p>
     </div>
   );
@@ -116,118 +119,152 @@ function GroupedBarChart({ data, unit, title, subtitle }) {
 
 function StatCard({ value, label, sub, highlight }) {
   return (
-    <div
-      className={`rounded-xl border p-5 flex flex-col gap-1 ${
-        highlight
-          ? "border-blue-700 bg-blue-900/30"
-          : "border-gray-700 bg-gray-900"
-      }`}
-    >
-      <span className="text-3xl font-bold text-white">{value}</span>
-      <span className="text-sm font-medium text-gray-300">{label}</span>
-      {sub && <span className="text-xs text-gray-500 mt-1">{sub}</span>}
+    <div className={`card ${highlight ? "ring-2 ring-amber-accent/40" : ""}`}>
+      <span className="block font-serif text-4xl font-bold text-ink">{value}</span>
+      <span className="block text-sm font-semibold text-ink-600 mt-2">{label}</span>
+      {sub && <span className="block text-xs text-ink-500 mt-2 leading-relaxed">{sub}</span>}
     </div>
   );
 }
 
+function SectionLabel({ children }) {
+  return <span className="label-mono">// {children}</span>;
+}
+
 export default function Dashboard() {
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white">Research Findings</h2>
-        <p className="text-gray-400 text-sm mt-1">
-          Based on Karaman, Chakraborty &amp; Banerjee (2025) — 5.4M hotel reviews across 4,910 hotels, 12 years
-        </p>
-      </div>
-
-      {/* Key message */}
-      <div className="bg-amber-950/40 border border-amber-800 rounded-xl p-5">
-        <p className="text-sm text-amber-200">
-          <strong>Key insight:</strong> Simply responding improves reputation but doesn't move revenue.
-          <strong> What you say matters</strong> — two elements consistently improve both ratings and revenue regardless of review type:
-          openly accepting the problem and tailoring the message to the specific topics raised.
-          Promises of future action consistently hurt both.
-        </p>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GroupedBarChart
-          data={RATINGS_DATA}
-          unit="%"
-          title="Effect on Future Ratings"
-          subtitle="% of mean star rating · Table 12, Karaman et al. 2025"
-        />
-        <GroupedBarChart
-          data={REVENUE_DATA}
-          unit="%"
-          title="Effect on Revenue"
-          subtitle="% of mean daily revenue · Table 12, Karaman et al. 2025"
-        />
-      </div>
-
-      <p className="text-xs text-gray-600 text-center pb-4">
-        Effects estimated via visibility-based causal identification. Robustness verified with Tripadvisor data as external quality control.
-      </p>
-
-      {/* Headline stats */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
-          Impact of Responding (any response)
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard
-            value="+0.24★"
-            label="Rating lift — negative reviews"
-            sub="Next incoming review (full response rate)"
-            highlight
-          />
-          <StatCard
-            value="+0.03★"
-            label="Rating lift — positive reviews"
-            sub="Next incoming review (full response rate)"
-          />
-          <StatCard
-            value="Not significant"
-            label="Revenue impact — responding alone"
-            sub="Content of the response is what drives sales"
-          />
-          <StatCard
-            value="5.4M reviews"
-            label="Dataset size"
-            sub="4,910 hotels · 12 years · daily financials"
-          />
-        </div>
-      </div>
-
-      {/* Why responding matters — consumer stats */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-6 text-white">
-        <h3 className="text-base font-semibold mb-4 text-slate-200 uppercase tracking-wide text-xs">
-          Why Management Responses Matter
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="text-4xl font-bold text-red-400">58%</div>
-            <p className="text-sm text-slate-300 mt-1">
-              of customers are <strong>unlikely to use a business</strong> if managers don't respond to reviews at all
+    <>
+      {/* HERO — dark */}
+      <section className="bg-ink text-white">
+        <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
+          <div className="max-w-3xl animate-fadeUp">
+            <SectionLabel>research_findings</SectionLabel>
+            <h1 className="headline-serif text-5xl sm:text-6xl text-white mt-5">
+              What <em>actually</em> moves the needle on reviews.
+            </h1>
+            <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
+              A large-scale causal study of 5.4M hotel reviews across 4,910 properties over 12 years.
+              Responding helps your reputation — but only certain things you{" "}
+              <span className="italic text-amber-accent font-serif">say</span> move revenue.
             </p>
-            <p className="text-xs text-slate-500 mt-2">Brightlocal, 2023</p>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="text-4xl font-bold text-green-400">88%</div>
-            <p className="text-sm text-slate-300 mt-1">
-              of consumers are <strong>likely to use a business</strong> if the manager responds to all reviews — positive or negative
-            </p>
-            <p className="text-xs text-slate-500 mt-2">Brightlocal, 2023</p>
           </div>
         </div>
-        <div className="mt-4 bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-slate-300">
-          <strong className="text-white">Two audiences, two effects:</strong> Future reviewers use responses as benchmarks when writing their own reviews.
-          Prospective customers who haven't yet booked use the same responses to decide whether to purchase —
-          making response quality a lever for both reputation <em>and</em> revenue.
+      </section>
+
+      {/* KEY INSIGHT — dark continuation, then transition */}
+      <section className="bg-ink text-white pb-24">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="card-dark border-l-4 !border-l-amber-accent animate-fadeUp">
+            <p className="font-mono text-xs text-amber-accent uppercase tracking-wider mb-3">// key_insight</p>
+            <p className="text-white text-lg leading-relaxed font-serif">
+              Simply responding improves reputation but doesn't move revenue.
+              <em className="text-amber-accent"> What you say matters.</em> Two elements consistently improve both
+              ratings and revenue regardless of review type: openly accepting the problem, and tailoring the message
+              to the specific topics raised. Promises of future action consistently hurt both.
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* CHARTS — cream */}
+      <section className="bg-cream">
+        <div className="max-w-[1200px] mx-auto px-6 py-24">
+          <div className="max-w-2xl mb-12">
+            <SectionLabel>the_data</SectionLabel>
+            <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
+              Effects of <em>each element</em> on ratings & revenue.
+            </h2>
+            <p className="text-ink-600 text-base mt-4 leading-relaxed">
+              Estimated via visibility-based causal identification. Bars show the percentage change relative to baseline.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger">
+            <GroupedBarChart
+              data={RATINGS_DATA}
+              unit="%"
+              title="Effect on Future Ratings"
+              subtitle="// % of mean star rating"
+            />
+            <GroupedBarChart
+              data={REVENUE_DATA}
+              unit="%"
+              title="Effect on Revenue"
+              subtitle="// % of mean daily revenue"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* STAT CARDS — dark */}
+      <section className="bg-ink text-white">
+        <div className="max-w-[1200px] mx-auto px-6 py-24">
+          <div className="max-w-2xl mb-12">
+            <SectionLabel>impact_of_responding</SectionLabel>
+            <h2 className="headline-serif text-4xl sm:text-5xl text-white mt-4">
+              Responding at all is <em>the floor</em>, not the ceiling.
+            </h2>
+            <p className="text-ink-400 text-base mt-4 leading-relaxed">
+              The act of replying lifts ratings — especially after negative reviews — but the content of the reply is
+              what determines whether it moves revenue.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
+            <div className="card-dark">
+              <span className="block font-serif text-4xl font-bold text-amber-accent">+0.24★</span>
+              <span className="block text-sm font-semibold text-white mt-2">Rating lift — negative reviews</span>
+              <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Next incoming review (full response rate)</span>
+            </div>
+            <div className="card-dark">
+              <span className="block font-serif text-4xl font-bold text-white">+0.03★</span>
+              <span className="block text-sm font-semibold text-white mt-2">Rating lift — positive reviews</span>
+              <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Next incoming review (full response rate)</span>
+            </div>
+            <div className="card-dark">
+              <span className="block font-serif text-3xl font-bold text-white">Not significant</span>
+              <span className="block text-sm font-semibold text-white mt-2">Revenue impact — responding alone</span>
+              <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Content of the response is what drives sales</span>
+            </div>
+            <div className="card-dark">
+              <span className="block font-serif text-4xl font-bold text-white">5.4M</span>
+              <span className="block text-sm font-semibold text-white mt-2">Reviews analysed</span>
+              <span className="block text-xs text-ink-400 mt-2 leading-relaxed">4,910 hotels · 12 years · daily financials</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHY MANAGEMENT RESPONSES MATTER — cream */}
+      <section className="bg-cream">
+        <div className="max-w-[1200px] mx-auto px-6 py-24">
+          <div className="max-w-2xl mb-12">
+            <SectionLabel>why_it_matters</SectionLabel>
+            <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
+              Two audiences are reading <em>every reply</em>.
+            </h2>
+            <p className="text-ink-600 text-base mt-4 leading-relaxed">
+              Future reviewers use responses as benchmarks when writing their own. Prospective customers
+              who haven't yet booked use the same responses to decide whether to buy.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 stagger">
+            <StatCard
+              value="58%"
+              label="Likely to skip a business"
+              sub="… if managers don't respond to reviews at all. Brightlocal, 2023."
+              highlight
+            />
+            <StatCard
+              value="88%"
+              label="Likely to use a business"
+              sub="… if the manager responds to all reviews — positive and negative. Brightlocal, 2023."
+              highlight
+            />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
