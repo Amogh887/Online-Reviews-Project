@@ -18,14 +18,17 @@ export default function App() {
       <header className="bg-ink sticky top-0 z-20 border-b border-ink-700">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2.5">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-              </svg>
-              <span className="font-sans text-[13px] font-semibold text-white tracking-[0.18em] uppercase">
-                Response Coach
-              </span>
-            </div>
+            <button
+            onClick={() => setActiveTab("dashboard")}
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            <span className="font-sans text-[13px] font-semibold text-white tracking-[0.18em] uppercase">
+              Response Coach
+            </span>
+          </button>
 
             <nav className="hidden md:flex items-center gap-1">
               {TABS.map((tab) => {

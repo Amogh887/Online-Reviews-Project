@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -41,11 +42,11 @@ const NEGATIVE_SOFT = "#d97a6c";
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-ink-800 border border-ink-700 rounded-lg p-3 shadow-lg text-sm">
+    <div className="bg-ink-900 border border-ink-700 rounded-lg p-3 shadow-lg text-sm">
       <p className="font-semibold text-white mb-1">{label}</p>
       {payload.map((p) =>
         p.value != null ? (
-          <p key={p.dataKey} style={{ color: p.color }} className="text-xs font-mono">
+          <p key={p.dataKey} className="text-xs font-mono text-white">
             {p.name}: {p.value > 0 ? "+" : ""}{p.value}{unit}
           </p>
         ) : null
@@ -62,16 +63,25 @@ const barColor = (value, soft = false) => {
 };
 
 function GroupedBarChart({ data, unit, title, subtitle }) {
+  const [highlighted, setHighlighted] = useState(null);
+
+  const getBarOpacity = (isNegative, entry) => {
+    if (isNegative ? entry.negative === null : entry.positive === null) return 0;
+    if (!highlighted) return 1;
+    const series = isNegative ? "negative" : "positive";
+    return series === highlighted ? 1 : 0.25;
+  };
+
   return (
     <div className="card">
       <h3 className="font-serif text-2xl font-bold text-ink">{title}</h3>
-      <p className="text-xs text-ink-500 mt-1 mb-5 font-mono">{subtitle}</p>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={data}
           margin={{ top: 8, right: 8, left: 0, bottom: 60 }}
           barCategoryGap="30%"
           barGap={4}
+          onClick={() => highlighted && setHighlighted(null)}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e6e1d6" />
           <XAxis
@@ -94,25 +104,54 @@ function GroupedBarChart({ data, unit, title, subtitle }) {
           <Legend
             verticalAlign="top"
             height={28}
-            formatter={(value) => (
-              <span className="text-xs text-ink-500">{value}</span>
+            content={() => (
+              <div className="flex gap-4 justify-center text-xs text-ink-500 mt-1">
+                <span className="flex items-center gap-1.5 cursor-pointer hover:text-ink" onClick={(e) => { e.stopPropagation(); setHighlighted(highlighted === "negative" ? null : "negative"); }}>
+                  <span style={{background: NEGATIVE_COLOR}} className="inline-block w-3 h-3 rounded-sm" />
+                  Negative review response
+                </span>
+                <span className="flex items-center gap-1.5 cursor-pointer hover:text-ink" onClick={(e) => { e.stopPropagation(); setHighlighted(highlighted === "positive" ? null : "positive"); }}>
+                  <span style={{background: POSITIVE_SOFT}} className="inline-block w-3 h-3 rounded-sm" />
+                  Positive review response
+                </span>
+              </div>
             )}
           />
-          <Bar dataKey="negative" name="Negative review response" radius={[3, 3, 0, 0]}>
+          <Bar
+            dataKey="negative"
+            name="Negative review response"
+            radius={[3, 3, 0, 0]}
+            onClick={(e) => { e.stopPropagation(); setHighlighted(highlighted === "negative" ? null : "negative"); }}
+          >
             {data.map((entry, idx) => (
-              <Cell key={idx} fill={barColor(entry.negative)} opacity={entry.negative == null ? 0 : 1} />
+              <Cell
+                key={idx}
+                fill={barColor(entry.negative)}
+                opacity={getBarOpacity(true, entry)}
+              />
             ))}
           </Bar>
-          <Bar dataKey="positive" name="Positive review response" radius={[3, 3, 0, 0]}>
+          <Bar
+            dataKey="positive"
+            name="Positive review response"
+            radius={[3, 3, 0, 0]}
+            onClick={(e) => { e.stopPropagation(); setHighlighted(highlighted === "positive" ? null : "positive"); }}
+          >
             {data.map((entry, idx) => (
-              <Cell key={idx} fill={barColor(entry.positive, true)} opacity={entry.positive == null ? 0 : 1} />
+              <Cell
+                key={idx}
+                fill={barColor(entry.positive, true)}
+                opacity={getBarOpacity(false, entry)}
+              />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <p className="text-xs text-ink-500 text-center mt-3">
-        Green = positive effect · Red = negative effect · Missing bar = not applicable
-      </p>
+      {highlighted && (
+        <p className="text-xs text-ink-500 italic mt-3">
+          Click to reset
+        </p>
+      )}
     </div>
   );
 }
@@ -127,10 +166,6 @@ function StatCard({ value, label, sub, highlight }) {
   );
 }
 
-function SectionLabel({ children }) {
-  return <span className="label-mono">// {children}</span>;
-}
-
 export default function Dashboard() {
   return (
     <>
@@ -138,8 +173,7 @@ export default function Dashboard() {
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
-            <SectionLabel>research_findings</SectionLabel>
-            <h1 className="headline-serif text-5xl sm:text-6xl text-white mt-5">
+            <h1 className="headline-serif text-5xl sm:text-6xl text-white">
               What <em>actually</em> moves the needle on reviews.
             </h1>
             <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
@@ -155,7 +189,6 @@ export default function Dashboard() {
       <section className="bg-ink text-white pb-24">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="card-dark border-l-4 !border-l-amber-accent animate-fadeUp">
-            <p className="font-mono text-xs text-amber-accent uppercase tracking-wider mb-3">// key_insight</p>
             <p className="text-white text-lg leading-relaxed font-serif">
               Simply responding improves reputation but doesn't move revenue.
               <em className="text-amber-accent"> What you say matters.</em> Two elements consistently improve both
@@ -170,8 +203,7 @@ export default function Dashboard() {
       <section className="bg-cream">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
-            <SectionLabel>the_data</SectionLabel>
-            <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
+            <h2 className="headline-serif text-4xl sm:text-5xl text-ink">
               Effects of <em>each element</em> on ratings & revenue.
             </h2>
             <p className="text-ink-600 text-base mt-4 leading-relaxed">
@@ -200,8 +232,7 @@ export default function Dashboard() {
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
-            <SectionLabel>impact_of_responding</SectionLabel>
-            <h2 className="headline-serif text-4xl sm:text-5xl text-white mt-4">
+            <h2 className="headline-serif text-4xl sm:text-5xl text-white">
               Responding at all is <em>the floor</em>, not the ceiling.
             </h2>
             <p className="text-ink-400 text-base mt-4 leading-relaxed">
@@ -239,8 +270,7 @@ export default function Dashboard() {
       <section className="bg-cream">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
-            <SectionLabel>why_it_matters</SectionLabel>
-            <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
+            <h2 className="headline-serif text-4xl sm:text-5xl text-ink">
               Two audiences are reading <em>every reply</em>.
             </h2>
             <p className="text-ink-600 text-base mt-4 leading-relaxed">

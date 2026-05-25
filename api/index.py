@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
 
 import coach
@@ -108,3 +109,42 @@ async def api_sample_generate(req: SampleGenRequest):
 @app.get("/api/dashboard")
 async def api_dashboard():
     return {"headline": HEADLINE_STATS, "charts": CHART_DATA}
+
+
+# Streaming endpoints (SSE)
+@app.post("/api/generate/stream")
+async def api_generate_stream(req: GenerateRequest):
+    try:
+        async def generate():
+            async for line in coach.stream_generate(req.review, req.review_type):
+                yield line
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/practice/stream")
+async def api_practice_stream(req: PracticeRequest):
+    try:
+        async def generate():
+            async for line in coach.stream_practice(req.review, req.response, req.review_type):
+                yield line
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

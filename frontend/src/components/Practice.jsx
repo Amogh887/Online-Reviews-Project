@@ -34,6 +34,7 @@ export default function Practice() {
   const [sampleLoading, setSampleLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -99,8 +100,9 @@ export default function Practice() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStreamingText("");
     try {
-      const res = await fetch("/api/practice", {
+      const res = await fetch("/api/practice/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -110,10 +112,37 @@ export default function Practice() {
         }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || `Server error ${res.status}`);
+        throw new Error(`Server error ${res.status}`);
       }
-      setResult(await res.json());
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          const [eventLine, ...dataLines] = line.trim().split("\n");
+          if (eventLine === "event: token") {
+            const dataLine = dataLines.find((l) => l.startsWith("data: "));
+            if (dataLine) {
+              const text = JSON.parse(dataLine.slice(6));
+              setStreamingText((prev) => prev + text);
+            }
+          } else if (eventLine === "event: done") {
+            const dataLine = dataLines.find((l) => l.startsWith("data: "));
+            if (dataLine) {
+              const metadata = JSON.parse(dataLine.slice(6));
+              setResult(metadata);
+            }
+          }
+        }
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -131,7 +160,6 @@ export default function Practice() {
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
-            <span className="label-mono">// practice</span>
             <h1 className="headline-serif text-5xl sm:text-6xl text-white mt-5">
               Write a reply. Get it <em>rewritten by the research</em>.
             </h1>
@@ -148,15 +176,14 @@ export default function Practice() {
         <div className="max-w-[1200px] mx-auto px-6 py-20">
           {/* Review type */}
           <div className="mb-8 animate-fadeUp">
-            <span className="label-mono">// review_type</span>
-            <div className="inline-flex rounded-lg border border-ink-400/30 overflow-hidden mt-3 ml-0 sm:ml-4 align-middle">
+            <div className="inline-flex rounded-lg border border-ink-400/30 overflow-hidden mt-0 ml-0 sm:ml-0 align-middle">
               <button
                 type="button"
                 onClick={() => setReviewType("negative")}
                 className={`px-5 py-2 text-sm font-medium transition-colors ${
                   reviewType === "negative"
                     ? "bg-ink text-white"
-                    : "bg-white text-ink-600 hover:bg-cream-200"
+                    : "bg-cream-200 text-ink-600 hover:bg-cream-300"
                 }`}
               >
                 Negative (1–3★)
@@ -167,7 +194,7 @@ export default function Practice() {
                 className={`px-5 py-2 text-sm font-medium transition-colors ${
                   reviewType === "positive"
                     ? "bg-ink text-white"
-                    : "bg-white text-ink-600 hover:bg-cream-200"
+                    : "bg-cream-200 text-ink-600 hover:bg-cream-300"
                 }`}
               >
                 Positive (4–5★)
@@ -184,12 +211,9 @@ export default function Practice() {
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </div>
-                <div>
-                  <span className="label-mono block">// sample_review</span>
-                  {currentSample?.topic && (
-                    <span className="text-xs text-ink-500 font-mono">{currentSample.topic}</span>
-                  )}
-                </div>
+                {currentSample?.topic && (
+                  <span className="text-xs text-ink-500 font-mono">{currentSample.topic}</span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={pickCuratedRandom} disabled={sampleLoading}
@@ -210,7 +234,6 @@ export default function Practice() {
           {/* Response form */}
           <form onSubmit={submit} className="space-y-5 animate-fadeUp">
             <div>
-              <label className="label-mono block mb-3">// your_draft_response</label>
               <textarea
                 value={response}
                 onChange={(e) => setResponse(e.target.value)}
@@ -245,15 +268,14 @@ export default function Practice() {
       </section>
 
       {/* RESULTS — dark */}
-      {result && (
+      {(result || streamingText) && (
         <section className="bg-ink text-white">
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="max-w-2xl mb-12 animate-fadeUp">
-              <span className="label-mono">// the_coaching</span>
               <h2 className="headline-serif text-4xl sm:text-5xl text-white mt-4">
                 What changed, and <em>why</em>.
               </h2>
-              {result.overall && (
+              {result?.overall && (
                 <p className="text-ink-400 text-base mt-6 leading-relaxed border-l-2 border-amber-accent pl-5">
                   {result.overall}
                 </p>
@@ -263,21 +285,18 @@ export default function Practice() {
             {/* Side-by-side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger mb-12">
               <div className="card-dark">
-                <span className="label-mono">// your_response</span>
-                <p className="text-sm text-ink-400 leading-relaxed whitespace-pre-wrap mt-3">{response}</p>
+                <p className="text-sm text-ink-400 leading-relaxed whitespace-pre-wrap">{response}</p>
               </div>
               <div className="card-dark !border-amber-accent/40">
-                <span className="label-mono">// suggested_rewrite</span>
-                <p className="text-base text-white leading-relaxed whitespace-pre-wrap mt-3 font-serif">
-                  {result.rewritten_response}
+                <p className="text-base text-white leading-relaxed whitespace-pre-wrap font-serif">
+                  {streamingText || (result?.rewritten_response ?? "")}
                 </p>
               </div>
             </div>
 
             {/* Element pills */}
             <div className="mb-12 animate-fadeUp">
-              <span className="label-mono">// elements_detected</span>
-              <h3 className="font-serif text-2xl font-bold text-white mt-3 mb-4">In your response</h3>
+              <h3 className="font-serif text-2xl font-bold text-white mb-4">Elements in your response</h3>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(elements).map(([key, value]) => (
                   <ElementPill
@@ -295,8 +314,7 @@ export default function Practice() {
             {/* Changes */}
             {changes.length > 0 && (
               <div className="animate-fadeUp">
-                <span className="label-mono">// changes</span>
-                <h3 className="font-serif text-2xl font-bold text-white mt-3 mb-5">
+                <h3 className="font-serif text-2xl font-bold text-white mb-5">
                   {changes.length} edits, with reasoning
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger">

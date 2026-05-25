@@ -8,6 +8,7 @@ from findings import FINDINGS, SAMPLE_REVIEWS
 MODEL = "claude-sonnet-4-6"
 
 _client = None
+_async_client = None
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -15,6 +16,13 @@ def _get_client() -> anthropic.Anthropic:
     if _client is None:
         _client = anthropic.Anthropic()
     return _client
+
+
+def _get_async_client() -> anthropic.AsyncAnthropic:
+    global _async_client
+    if _async_client is None:
+        _async_client = anthropic.AsyncAnthropic()
+    return _async_client
 
 
 def _findings_block() -> str:
@@ -107,9 +115,11 @@ You are given a guest review. Write the ideal management response that:
 - Keep the response professional and concise (3–5 sentences typical, never more than 7).
 - Do not promise future actions on a negative review.
 
-Return ONLY valid JSON (no markdown):
+RESPONSE FORMAT:
+1. First, write the management response text directly (no quotes, no formatting).
+2. Then write this exact line: ---JSON---
+3. Then write ONLY valid JSON (no markdown) with these fields:
 {
-  "response": "<the generated response text>",
   "elements_used": ["<element_key>", ...],
   "elements_avoided": ["<element_key>", ...],
   "rationale": "<1–2 sentences explaining the strategic choices>"
@@ -142,6 +152,100 @@ def generate_response(review: str, review_type: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Streaming: async generators for SSE
+# ---------------------------------------------------------------------------
+
+async def stream_generate(review: str, review_type: str):
+    """Async generator yielding SSE lines: response text streamed token-by-token, then metadata."""
+    user_msg = (
+        f"Guest review ({review_type}, "
+        f"{'1–3 stars' if review_type == 'negative' else '4–5 stars'}):\n"
+        f"{review}\n\n"
+        f"Write the ideal management response."
+    )
+
+    client = _get_async_client()
+    full_text = ""
+    seen_delimiter = False
+
+    async with client.messages.stream(
+        model=MODEL,
+        max_tokens=1024,
+        system=_system_blocks(_GENERATE_INSTRUCTIONS),
+        messages=[{"role": "user", "content": user_msg}],
+    ) as stream:
+        async for text in stream.text_stream:
+            if not seen_delimiter:
+                full_text += text
+                if "---JSON---" in full_text:
+                    parts = full_text.split("---JSON---", 1)
+                    response_text = parts[0].strip()
+                    yield f"event: token\ndata: {json.dumps(response_text)}\n\n"
+                    full_text = parts[1] if len(parts) > 1 else ""
+                    seen_delimiter = True
+            else:
+                full_text += text
+
+    json_text = full_text.strip()
+    if json_text.startswith("```"):
+        lines = json_text.split("\n")
+        json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+
+    metadata = json.loads(json_text)
+    used_meta = _attach_meta({k: True for k in metadata.get("elements_used", [])}, review_type)
+    avoided_meta = _attach_meta({k: True for k in metadata.get("elements_avoided", [])}, review_type)
+    metadata["elements_used_meta"] = used_meta
+    metadata["elements_avoided_meta"] = avoided_meta
+
+    yield f"event: done\ndata: {json.dumps(metadata)}\n\n"
+
+
+async def stream_practice(review: str, response: str, review_type: str):
+    """Async generator yielding SSE lines: rewrite text streamed token-by-token, then metadata."""
+    user_msg = (
+        f"Guest review ({review_type}, "
+        f"{'1–3 stars' if review_type == 'negative' else '4–5 stars'}):\n"
+        f"{review}\n\n"
+        f"Manager's draft response:\n{response}\n\n"
+        f"Analyze and rewrite."
+    )
+
+    client = _get_async_client()
+    full_text = ""
+    seen_delimiter = False
+
+    async with client.messages.stream(
+        model=MODEL,
+        max_tokens=1500,
+        system=_system_blocks(_PRACTICE_INSTRUCTIONS),
+        messages=[{"role": "user", "content": user_msg}],
+    ) as stream:
+        async for text in stream.text_stream:
+            if not seen_delimiter:
+                full_text += text
+                if "---JSON---" in full_text:
+                    parts = full_text.split("---JSON---", 1)
+                    rewrite_text = parts[0].strip()
+                    yield f"event: token\ndata: {json.dumps(rewrite_text)}\n\n"
+                    full_text = parts[1] if len(parts) > 1 else ""
+                    seen_delimiter = True
+            else:
+                full_text += text
+
+    json_text = full_text.strip()
+    if json_text.startswith("```"):
+        lines = json_text.split("\n")
+        json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+
+    metadata = json.loads(json_text)
+    metadata["detected_elements_meta"] = _attach_meta(
+        metadata.get("detected_elements", {}), review_type
+    )
+
+    yield f"event: done\ndata: {json.dumps(metadata)}\n\n"
+
+
+# ---------------------------------------------------------------------------
 # Practice mode: critique + rewrite the user's response
 # ---------------------------------------------------------------------------
 
@@ -158,7 +262,10 @@ Rewrite rules:
 - Add high-impact good elements that are missing (especially problem_acceptance + response_tailoring for negative).
 - Keep the rewrite the same approximate length as the original.
 
-Return ONLY valid JSON (no markdown):
+RESPONSE FORMAT:
+1. First, write the rewritten response text directly (no quotes, no formatting).
+2. Then write this exact line: ---JSON---
+3. Then write ONLY valid JSON (no markdown) with these fields:
 {
   "detected_elements": {
     "problem_acceptance": <bool or null>,
@@ -172,7 +279,6 @@ Return ONLY valid JSON (no markdown):
     "revisit_request": <bool>,
     "apology": <bool>
   },
-  "rewritten_response": "<the improved response text>",
   "changes": [
     {"element": "<element_key>", "action": "added"|"removed"|"strengthened"|"softened",
      "reason": "<1 sentence citing the numeric effect from the research>"}

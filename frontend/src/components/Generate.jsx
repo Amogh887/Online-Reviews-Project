@@ -5,6 +5,7 @@ export default function Generate() {
   const [review, setReview] = useState("");
   const [reviewType, setReviewType] = useState("negative");
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -15,18 +16,46 @@ export default function Generate() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStreamingText("");
     setCopied(false);
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/generate/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ review, review_type: reviewType }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || `Server error ${res.status}`);
+        throw new Error(`Server error ${res.status}`);
       }
-      setResult(await res.json());
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          const [eventLine, ...dataLines] = line.trim().split("\n");
+          if (eventLine === "event: token") {
+            const dataLine = dataLines.find((l) => l.startsWith("data: "));
+            if (dataLine) {
+              const text = JSON.parse(dataLine.slice(6));
+              setStreamingText((prev) => prev + text);
+            }
+          } else if (eventLine === "event: done") {
+            const dataLine = dataLines.find((l) => l.startsWith("data: "));
+            if (dataLine) {
+              const metadata = JSON.parse(dataLine.slice(6));
+              setResult(metadata);
+            }
+          }
+        }
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,7 +79,6 @@ export default function Generate() {
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
-            <span className="label-mono">// generate</span>
             <h1 className="headline-serif text-5xl sm:text-6xl text-white mt-5">
               A model reply, written <em>by the research</em>.
             </h1>
@@ -63,7 +91,6 @@ export default function Generate() {
           {/* Form on dark */}
           <form onSubmit={submit} className="mt-12 max-w-3xl space-y-6 animate-fadeUp">
             <div>
-              <label className="label-mono block mb-3">// review_type</label>
               <div className="inline-flex rounded-lg border border-ink-700 overflow-hidden">
                 <button
                   type="button"
@@ -71,7 +98,7 @@ export default function Generate() {
                   className={`px-5 py-2 text-sm font-medium transition-colors ${
                     reviewType === "negative"
                       ? "bg-amber-accent text-ink"
-                      : "bg-ink-800 text-ink-400 hover:text-white"
+                      : "bg-ink-700 text-ink-400 hover:text-white"
                   }`}
                 >
                   Negative (1–3★)
@@ -82,7 +109,7 @@ export default function Generate() {
                   className={`px-5 py-2 text-sm font-medium transition-colors ${
                     reviewType === "positive"
                       ? "bg-amber-accent text-ink"
-                      : "bg-ink-800 text-ink-400 hover:text-white"
+                      : "bg-ink-700 text-ink-400 hover:text-white"
                   }`}
                 >
                   Positive (4–5★)
@@ -91,7 +118,6 @@ export default function Generate() {
             </div>
 
             <div>
-              <label className="label-mono block mb-3">// guest_review</label>
               <textarea
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
@@ -126,11 +152,10 @@ export default function Generate() {
       </section>
 
       {/* RESULTS — cream */}
-      {result && (
+      {(result || streamingText) && (
         <section className="bg-cream">
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="max-w-2xl mb-12 animate-fadeUp">
-              <span className="label-mono">// the_response</span>
               <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
                 Here's the reply, and <em>why it works</em>.
               </h2>
@@ -148,12 +173,14 @@ export default function Generate() {
                     </div>
                     <h3 className="font-serif text-2xl font-bold text-ink">Generated response</h3>
                   </div>
-                  <button onClick={copyResponse} className="btn-outline !text-ink !border-ink-600 hover:!bg-ink hover:!text-white">
-                    {copied ? "✓ Copied" : "Copy"}
-                  </button>
+                  {result && (
+                    <button onClick={copyResponse} className="btn-outline !text-ink !border-ink-600 hover:!bg-ink hover:!text-white">
+                      {copied ? "✓ Copied" : "Copy"}
+                    </button>
+                  )}
                 </div>
                 <p className="text-base text-ink-600 leading-relaxed whitespace-pre-wrap">
-                  {result.response}
+                  {streamingText || (result?.response ?? "")}
                 </p>
               </div>
 
