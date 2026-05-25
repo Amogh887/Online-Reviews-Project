@@ -12,8 +12,13 @@ import json
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 import anthropic
+
+# Load env from project root backend/
+root_dir = Path(__file__).parent.parent
+load_dotenv(root_dir / 'backend' / '.env')
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
@@ -21,7 +26,7 @@ from coach import generate_response, practice_critique
 from findings import FINDINGS
 
 client = anthropic.Anthropic()
-haiku = anthropic.Anthropic(model="claude-haiku-4-5")
+haiku = anthropic.Anthropic()
 
 # ============================================================================
 # Phase 1: Generate test dataset with Haiku
