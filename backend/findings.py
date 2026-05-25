@@ -11,7 +11,7 @@ FINDINGS = {
             "direction": "good",
             "description": "Explicitly acknowledging the issue raised by the guest.",
             "tip_good": "Acknowledging the problem builds trust with future readers and boosts ratings by 0.74% and revenue by 2.3%.",
-            "tip_bad": "Consider explicitly acknowledging the specific problem the guest raised — this is the single most impactful positive element.",
+            "tip_bad": "Consider explicitly acknowledging the specific problem the guest raised, this is the single most impactful positive element.",
         },
         "taking_responsibility": {
             "label": "Taking Responsibility",
@@ -37,7 +37,7 @@ FINDINGS = {
             "revenue": -0.017,
             "direction": "bad",
             "description": "Promising corrective action (e.g., 'We will look into this', 'We will retrain staff').",
-            "tip_good": "Your response promises corrective action. Research shows this hurts both ratings (-0.13%) and revenue (-1.7%) — future readers discount unverifiable promises. Consider describing what has already been done instead, or removing the promise entirely.",
+            "tip_good": "Your response promises corrective action. Research shows this hurts both ratings (-0.13%) and revenue (-1.7%), future readers discount unverifiable promises. Consider describing what has already been done instead, or removing the promise entirely.",
             "tip_bad": None,
         },
         "response_tailoring": {
@@ -46,7 +46,7 @@ FINDINGS = {
             "revenue": +0.025,
             "direction": "good",
             "description": "Addressing the specific topics mentioned in the review (room, staff, cleanliness, etc.).",
-            "tip_good": "Your response addresses the specific topics raised. This is a strong signal — tailored responses improve ratings by 0.43% and revenue by 2.5%.",
+            "tip_good": "Your response addresses the specific topics raised. This is a strong signal, tailored responses improve ratings by 0.43% and revenue by 2.5%.",
             "tip_bad": "Your response appears generic. Addressing the specific issues mentioned in the review (e.g., room quality, staff, noise) improves ratings by 0.43% and revenue by 2.5%.",
         },
         "style_matching": {
@@ -73,7 +73,7 @@ FINDINGS = {
             "revenue": -0.0002,
             "direction": "bad",
             "description": "Referencing loyalty programs or repeat-guest status.",
-            "tip_good": "Your response mentions loyalty status/programs. In the context of a complaint, this tends to backfire (-0.06% ratings) — it can feel tone-deaf. Consider removing the loyalty reference.",
+            "tip_good": "Your response mentions loyalty status/programs. In the context of a complaint, this tends to backfire (-0.06% ratings), it can feel tone-deaf. Consider removing the loyalty reference.",
             "tip_bad": None,
         },
         "revisit_request": {
@@ -102,7 +102,7 @@ FINDINGS = {
             "revenue": +0.046,
             "direction": "good",
             "description": "Addressing the specific highlights mentioned by the guest.",
-            "tip_good": "Your response addresses the specific positives the guest mentioned. This is highly effective — tailoring to positive reviews improves revenue by 4.6%.",
+            "tip_good": "Your response addresses the specific positives the guest mentioned. This is highly effective, tailoring to positive reviews improves revenue by 4.6%.",
             "tip_bad": "Your response seems generic. Referencing what the guest specifically praised (staff, breakfast, location, etc.) improves ratings by 0.39% and revenue by 4.6%.",
         },
         "style_matching": {
@@ -111,7 +111,7 @@ FINDINGS = {
             "revenue": -0.054,
             "direction": "mixed",
             "description": "Closely mirroring the guest's tone and phrasing.",
-            "tip_good": "Your response closely echoes the guest's language. While this improves future ratings (+1.1%), it significantly hurts revenue (-5.4%) — prospective customers may find it repetitive or inauthentic. Consider referencing the same topics with your own words.",
+            "tip_good": "Your response closely echoes the guest's language. While this improves future ratings (+1.1%), it significantly hurts revenue (-5.4%), prospective customers may find it repetitive or inauthentic. Consider referencing the same topics with your own words.",
             "tip_bad": None,
         },
         "thanks": {
@@ -147,7 +147,7 @@ FINDINGS = {
             "revenue": +0.005,
             "direction": "mixed",
             "description": "Apologizing in a response to a positive review.",
-            "tip_good": "Your response includes an apology in reply to a positive review. This slightly reduces future ratings (-0.04%) — it can seem unnecessary or insincere. Consider removing it unless addressing a minor complaint within the positive review.",
+            "tip_good": "Your response includes an apology in reply to a positive review. This slightly reduces future ratings (-0.04%), it can seem unnecessary or insincere. Consider removing it unless addressing a minor complaint within the positive review.",
             "tip_bad": None,
         },
     },
@@ -168,7 +168,7 @@ HEADLINE_STATS = {
     "audience_split_insight": (
         "Future reviewers and prospective customers react differently to the same response. "
         "Future reviewers use responses as a benchmark when writing their own review. "
-        "Prospective customers use them to decide whether to book — making response quality "
+        "Prospective customers use them to decide whether to book, making response quality "
         "a lever for both reputation and revenue."
     ),
 }
@@ -260,7 +260,7 @@ SAMPLE_REVIEWS = [
         "type": "positive",
         "topic": "location + amenities",
         "text": (
-            "Perfect location — walking distance to everything we wanted to see. The "
+            "Perfect location, walking distance to everything we wanted to see. The "
             "rooftop bar at sunset was a highlight, and the gym was actually well-"
             "equipped (rare for hotels). Room was modern and quiet despite being in "
             "the city center. Worth every penny."

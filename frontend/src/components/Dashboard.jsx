@@ -172,7 +172,7 @@ function StatCard({ value, label, sub, highlight }) {
 export default function Dashboard() {
   return (
     <>
-      {/* HERO — dark */}
+      {/* HERO - dark */}
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
@@ -181,14 +181,14 @@ export default function Dashboard() {
             </h1>
             <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
               A large-scale causal study of 5.4M hotel reviews across 4,910 properties over 12 years.
-              Responding helps your reputation — but only certain things you{" "}
+              Responding helps your reputation, but only certain things you{" "}
               <span className="italic text-amber-accent font-serif">say</span> move revenue.
             </p>
           </div>
         </div>
       </section>
 
-      {/* KEY INSIGHT — dark continuation, then transition */}
+      {/* KEY INSIGHT - dark continuation, then transition */}
       <section className="bg-ink text-white pb-24">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="card-dark border-l-4 !border-l-amber-accent animate-fadeUp">
@@ -202,7 +202,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* CHARTS — cream */}
+      {/* CHARTS - cream */}
       <section className="bg-cream">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
@@ -231,7 +231,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* STAT CARDS — dark */}
+      {/* STAT CARDS - dark */}
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
@@ -239,7 +239,7 @@ export default function Dashboard() {
               Responding at all is <em>the floor</em>, not the ceiling.
             </h2>
             <p className="text-ink-400 text-base mt-4 leading-relaxed">
-              The act of replying lifts ratings — especially after negative reviews — but the content of the reply is
+              The act of replying lifts ratings, especially after negative reviews, but the content of the reply is
               what determines whether it moves revenue.
             </p>
           </div>
@@ -247,17 +247,17 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
             <div className="card-dark">
               <span className="block font-serif text-4xl font-bold text-amber-accent">+0.24★</span>
-              <span className="block text-sm font-semibold text-white mt-2">Rating lift — negative reviews</span>
+              <span className="block text-sm font-semibold text-white mt-2">Rating lift, negative reviews</span>
               <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Next incoming review (full response rate)</span>
             </div>
             <div className="card-dark">
               <span className="block font-serif text-4xl font-bold text-white">+0.03★</span>
-              <span className="block text-sm font-semibold text-white mt-2">Rating lift — positive reviews</span>
+              <span className="block text-sm font-semibold text-white mt-2">Rating lift, positive reviews</span>
               <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Next incoming review (full response rate)</span>
             </div>
             <div className="card-dark">
               <span className="block font-serif text-3xl font-bold text-white">Not significant</span>
-              <span className="block text-sm font-semibold text-white mt-2">Revenue impact — responding alone</span>
+              <span className="block text-sm font-semibold text-white mt-2">Revenue impact, responding alone</span>
               <span className="block text-xs text-ink-400 mt-2 leading-relaxed">Content of the response is what drives sales</span>
             </div>
             <div className="card-dark">
@@ -269,7 +269,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* WHY MANAGEMENT RESPONSES MATTER — cream */}
+      {/* WHY MANAGEMENT RESPONSES MATTER - cream */}
       <section className="bg-cream">
         <div className="max-w-[1200px] mx-auto px-6 py-24">
           <div className="max-w-2xl mb-12">
@@ -292,7 +292,7 @@ export default function Dashboard() {
             <StatCard
               value="88%"
               label="Likely to use a business"
-              sub="… if the manager responds to all reviews — positive and negative. Brightlocal, 2023."
+              sub="… if the manager responds to all reviews, positive and negative. Brightlocal, 2023."
               highlight
             />
           </div>

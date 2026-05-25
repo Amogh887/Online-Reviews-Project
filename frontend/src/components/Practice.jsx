@@ -169,7 +169,7 @@ export default function Practice() {
 
   return (
     <>
-      {/* HERO — dark */}
+      {/* HERO - dark */}
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
@@ -178,13 +178,13 @@ export default function Practice() {
             </h1>
             <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
               A sample guest review is shown below. Draft your response, and the AI rewrites it with
-              research-backed improvements — explaining every change with the causal estimate behind it.
+              research-backed improvements, explaining every change with the causal estimate behind it.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SAMPLE + FORM — cream */}
+      {/* SAMPLE + FORM - cream */}
       <section className="bg-cream">
         <div className="max-w-[1200px] mx-auto px-6 py-20">
           {/* Review type */}
@@ -280,7 +280,7 @@ export default function Practice() {
         </div>
       </section>
 
-      {/* RESULTS — dark */}
+      {/* RESULTS - dark */}
       {(result || streamingText) && (
         <section ref={resultsRef} className="bg-ink text-white scroll-mt-16">
           <div className="max-w-[1200px] mx-auto px-6 py-24">

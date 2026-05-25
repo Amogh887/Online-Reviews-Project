@@ -26,7 +26,7 @@ def _get_async_client() -> anthropic.AsyncAnthropic:
 
 
 def _findings_block() -> str:
-    """The big shared block embedded in every coaching call — cached.
+    """The big shared block embedded in every coaching call - cached.
 
     Includes all 10 elements (both review types) with descriptions and the
     causal estimates from Table 12 of Karaman, Chakraborty & Banerjee (2025).
@@ -45,7 +45,7 @@ def _findings_block() -> str:
 
     intro = (
         "You are a hotel-response coach grounded in peer-reviewed causal research "
-        "(Karaman, Chakraborty & Banerjee 2025 — 5.4M reviews across 4,910 hotels, "
+        "(Karaman, Chakraborty & Banerjee 2025 - 5.4M reviews across 4,910 hotels, "
         "12 years). The research identifies 10 response elements with measured "
         "causal effects on future ratings and revenue.\n\n"
         "KEY RULES:\n"
@@ -127,8 +127,9 @@ You are given a guest review. Write the ideal management response that:
 - Treats direction=mixed elements with care (use them sparingly, only when natural).
 - For negative reviews: lead with problem_acceptance, use high response_tailoring, skip action promises and regret.
 - For positive reviews: use high response_tailoring with the guest's own topics, but keep style_matching moderate (don't parrot their words).
-- Keep the response professional and concise (3–5 sentences typical, never more than 7).
+- Keep the response professional and concise (3-5 sentences typical, never more than 7).
 - Do not promise future actions on a negative review.
+- Never use em dashes. Use commas, periods, or parentheses instead.
 
 RESPONSE FORMAT:
 1. First, write the management response text directly (no quotes, no formatting).
@@ -199,7 +200,7 @@ async def _stream_prose_then_json(stream):
             yield ("token", emit)
 
     if not seen_delimiter and buffer:
-        # No delimiter ever appeared — treat the whole buffer as prose.
+        # No delimiter ever appeared - treat the whole buffer as prose.
         yield ("token", buffer)
 
     yield ("json", after)
@@ -295,6 +296,7 @@ Rewrite rules:
 - Remove elements with direction=bad (especially `action` promises for negative reviews).
 - Add high-impact good elements that are missing (especially problem_acceptance + response_tailoring for negative).
 - Keep the rewrite the same approximate length as the original.
+- Never use em dashes. Use commas, periods, or parentheses instead.
 
 RESPONSE FORMAT:
 1. First, write the rewritten response text directly (no quotes, no formatting).
@@ -361,8 +363,9 @@ def list_samples(review_type: str | None = None) -> list[dict]:
 
 _SAMPLE_GEN_SYSTEM = (
     "You generate realistic, varied guest reviews for a hotel for a coaching tool. "
-    "Output a single review of 3–5 sentences that sounds authentic — natural, "
-    "specific, and not too polished. Vary the topic each time."
+    "Output a single review of 3 to 5 sentences that sounds authentic, natural, "
+    "specific, and not too polished. Vary the topic each time. "
+    "Never use em dashes."
 )
 
 

@@ -88,7 +88,7 @@ export default function Generate() {
 
   return (
     <>
-      {/* HERO — dark */}
+      {/* HERO - dark */}
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
@@ -96,7 +96,7 @@ export default function Generate() {
               A model reply, written <em>by the research</em>.
             </h1>
             <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
-              Paste a guest review. The AI writes the ideal management reply — deliberately using the elements that
+              Paste a guest review. The AI writes the ideal management reply, deliberately using the elements that
               raise ratings and revenue, and avoiding the ones that hurt them.
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function Generate() {
         </div>
       </section>
 
-      {/* RESULTS — cream */}
+      {/* RESULTS - cream */}
       {(result || streamingText) && (
         <section ref={resultsRef} className="bg-cream scroll-mt-16">
           <div className="max-w-[1200px] mx-auto px-6 py-24">
