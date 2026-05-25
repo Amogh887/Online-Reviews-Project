@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ElementPill from "./ElementPill";
 
 export default function Generate() {
@@ -10,6 +10,18 @@ export default function Generate() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const resultsRef = useRef(null);
+  const hasScrolledRef = useRef(false);
+
+  // Scroll to the results the first time content starts streaming in, so the
+  // user can see the response is being generated rather than waiting blindly.
+  useEffect(() => {
+    if (streamingText && !hasScrolledRef.current && resultsRef.current) {
+      hasScrolledRef.current = true;
+      resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [streamingText]);
+
   const submit = async (e) => {
     e.preventDefault();
     if (!review.trim()) return;
@@ -18,6 +30,7 @@ export default function Generate() {
     setResult(null);
     setStreamingText("");
     setCopied(false);
+    hasScrolledRef.current = false;
     try {
       const res = await fetch("/api/generate/stream", {
         method: "POST",
@@ -153,7 +166,7 @@ export default function Generate() {
 
       {/* RESULTS — cream */}
       {(result || streamingText) && (
-        <section className="bg-cream">
+        <section ref={resultsRef} className="bg-cream scroll-mt-16">
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="max-w-2xl mb-12 animate-fadeUp">
               <h2 className="headline-serif text-4xl sm:text-5xl text-ink mt-4">
@@ -184,7 +197,7 @@ export default function Generate() {
                 </p>
               </div>
 
-              {result.rationale && (
+              {result?.rationale && (
                 <div className="card-dark text-white">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-9 h-9 rounded-md bg-ink-700 flex items-center justify-center">
@@ -199,9 +212,8 @@ export default function Generate() {
                 </div>
               )}
 
-              {result.elements_used?.length > 0 && (
+              {result?.elements_used?.length > 0 && (
                 <div className="card lg:col-span-2">
-                  <span className="label-mono">// deliberately_used</span>
                   <h3 className="font-serif text-2xl font-bold text-ink mt-2 mb-4">Elements applied</h3>
                   <div className="flex flex-wrap gap-2">
                     {result.elements_used.map((key) => (
@@ -218,9 +230,8 @@ export default function Generate() {
                 </div>
               )}
 
-              {result.elements_avoided?.length > 0 && (
+              {result?.elements_avoided?.length > 0 && (
                 <div className="card">
-                  <span className="label-mono">// deliberately_avoided</span>
                   <h3 className="font-serif text-2xl font-bold text-ink mt-2 mb-4">Elements skipped</h3>
                   <div className="flex flex-wrap gap-2">
                     {result.elements_avoided.map((key) => (

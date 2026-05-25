@@ -19,3 +19,7 @@ frontend/dist/
 # Tooling
 .vercel
 .claude/
+
+# Eval — generated output
+eval/results.json
+eval/dataset.json

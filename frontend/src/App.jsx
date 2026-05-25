@@ -37,7 +37,7 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-150 hover:scale-110 hover:underline underline-offset-4 decoration-2 ${
                       active
                         ? "text-amber-accent"
                         : "text-ink-400 hover:text-white"
@@ -79,7 +79,7 @@ export default function App() {
       <footer className="bg-ink text-ink-400 py-10 mt-24">
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-amber-accent">// crafted_with_intent</span>
+            <span className="headline-serif text-base text-amber-accent">Response Coach</span>
           </div>
           <p className="text-xs text-ink-500">Grounded in a study of 5.4M hotel reviews · 4,910 properties · 12 years</p>
         </div>

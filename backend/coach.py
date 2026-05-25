@@ -77,11 +77,26 @@ def _system_blocks(mode_instructions: str) -> list[dict]:
 
 
 def _parse_json_response(message) -> dict:
+    """Parse response with format: [visible text]\n---JSON---\n{metadata json}"""
     raw = message.content[0].text.strip()
-    if raw.startswith("```"):
-        lines = raw.split("\n")
-        raw = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-    return json.loads(raw)
+
+    if "---JSON---" in raw:
+        parts = raw.split("---JSON---", 1)
+        response_text = parts[0].strip()
+        json_text = parts[1].strip() if len(parts) > 1 else "{}"
+    else:
+        # Fallback: treat entire response as JSON (old format)
+        response_text = ""
+        json_text = raw
+
+    if json_text.startswith("```"):
+        lines = json_text.split("\n")
+        json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+
+    result = json.loads(json_text)
+    if response_text:
+        result["response"] = response_text
+    return result
 
 
 def _attach_meta(elements: dict, review_type: str) -> dict:
@@ -155,6 +170,49 @@ def generate_response(review: str, review_type: str) -> dict:
 # Streaming: async generators for SSE
 # ---------------------------------------------------------------------------
 
+_DELIMITER = "---JSON---"
+
+
+async def _stream_prose_then_json(stream):
+    """Yield ('token', chunk) for prose as it arrives, then ('json', raw) once.
+
+    Emits prose incrementally but withholds a tail the size of the delimiter so a
+    delimiter split across chunks is never streamed to the client as visible text.
+    """
+    buffer = ""
+    after = ""
+    seen_delimiter = False
+    keep = len(_DELIMITER) - 1
+
+    async for text in stream.text_stream:
+        if seen_delimiter:
+            after += text
+            continue
+        buffer += text
+        if _DELIMITER in buffer:
+            prose, after = buffer.split(_DELIMITER, 1)
+            if prose:
+                yield ("token", prose)
+            seen_delimiter = True
+        elif len(buffer) > keep:
+            emit, buffer = buffer[:-keep], buffer[-keep:]
+            yield ("token", emit)
+
+    if not seen_delimiter and buffer:
+        # No delimiter ever appeared — treat the whole buffer as prose.
+        yield ("token", buffer)
+
+    yield ("json", after)
+
+
+def _strip_code_fence(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+    return text
+
+
 async def stream_generate(review: str, review_type: str):
     """Async generator yielding SSE lines: response text streamed token-by-token, then metadata."""
     user_msg = (
@@ -165,8 +223,7 @@ async def stream_generate(review: str, review_type: str):
     )
 
     client = _get_async_client()
-    full_text = ""
-    seen_delimiter = False
+    json_raw = "{}"
 
     async with client.messages.stream(
         model=MODEL,
@@ -174,24 +231,13 @@ async def stream_generate(review: str, review_type: str):
         system=_system_blocks(_GENERATE_INSTRUCTIONS),
         messages=[{"role": "user", "content": user_msg}],
     ) as stream:
-        async for text in stream.text_stream:
-            if not seen_delimiter:
-                full_text += text
-                if "---JSON---" in full_text:
-                    parts = full_text.split("---JSON---", 1)
-                    response_text = parts[0].strip()
-                    yield f"event: token\ndata: {json.dumps(response_text)}\n\n"
-                    full_text = parts[1] if len(parts) > 1 else ""
-                    seen_delimiter = True
+        async for kind, payload in _stream_prose_then_json(stream):
+            if kind == "token":
+                yield f"event: token\ndata: {json.dumps(payload)}\n\n"
             else:
-                full_text += text
+                json_raw = payload
 
-    json_text = full_text.strip()
-    if json_text.startswith("```"):
-        lines = json_text.split("\n")
-        json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-
-    metadata = json.loads(json_text)
+    metadata = json.loads(_strip_code_fence(json_raw))
     used_meta = _attach_meta({k: True for k in metadata.get("elements_used", [])}, review_type)
     avoided_meta = _attach_meta({k: True for k in metadata.get("elements_avoided", [])}, review_type)
     metadata["elements_used_meta"] = used_meta
@@ -211,8 +257,7 @@ async def stream_practice(review: str, response: str, review_type: str):
     )
 
     client = _get_async_client()
-    full_text = ""
-    seen_delimiter = False
+    json_raw = "{}"
 
     async with client.messages.stream(
         model=MODEL,
@@ -220,24 +265,13 @@ async def stream_practice(review: str, response: str, review_type: str):
         system=_system_blocks(_PRACTICE_INSTRUCTIONS),
         messages=[{"role": "user", "content": user_msg}],
     ) as stream:
-        async for text in stream.text_stream:
-            if not seen_delimiter:
-                full_text += text
-                if "---JSON---" in full_text:
-                    parts = full_text.split("---JSON---", 1)
-                    rewrite_text = parts[0].strip()
-                    yield f"event: token\ndata: {json.dumps(rewrite_text)}\n\n"
-                    full_text = parts[1] if len(parts) > 1 else ""
-                    seen_delimiter = True
+        async for kind, payload in _stream_prose_then_json(stream):
+            if kind == "token":
+                yield f"event: token\ndata: {json.dumps(payload)}\n\n"
             else:
-                full_text += text
+                json_raw = payload
 
-    json_text = full_text.strip()
-    if json_text.startswith("```"):
-        lines = json_text.split("\n")
-        json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-
-    metadata = json.loads(json_text)
+    metadata = json.loads(_strip_code_fence(json_raw))
     metadata["detected_elements_meta"] = _attach_meta(
         metadata.get("detected_elements", {}), review_type
     )
@@ -304,6 +338,10 @@ def practice_critique(review: str, response: str, review_type: str) -> dict:
     )
 
     result = _parse_json_response(message)
+    # The rewritten prose comes back under "response"; expose it under the
+    # name the frontend and eval expect.
+    if "response" in result:
+        result["rewritten_response"] = result.pop("response")
     result["detected_elements_meta"] = _attach_meta(
         result.get("detected_elements", {}), review_type
     )

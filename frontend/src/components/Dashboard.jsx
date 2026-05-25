@@ -42,11 +42,14 @@ const NEGATIVE_SOFT = "#d97a6c";
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-ink-900 border border-ink-700 rounded-lg p-3 shadow-lg text-sm">
-      <p className="font-semibold text-white mb-1">{label}</p>
+    <div
+      style={{ background: "#000", borderRadius: "8px", padding: "12px" }}
+      className="shadow-lg text-sm"
+    >
+      <p style={{ color: "#fff" }} className="font-semibold mb-1">{label}</p>
       {payload.map((p) =>
         p.value != null ? (
-          <p key={p.dataKey} className="text-xs font-mono text-white">
+          <p key={p.dataKey} style={{ color: "#fff" }} className="text-xs font-mono">
             {p.name}: {p.value > 0 ? "+" : ""}{p.value}{unit}
           </p>
         ) : null

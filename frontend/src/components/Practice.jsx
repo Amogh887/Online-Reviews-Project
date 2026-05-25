@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ElementPill from "./ElementPill";
 import { labelFor } from "../lib/elements";
 
@@ -37,6 +37,18 @@ export default function Practice() {
   const [streamingText, setStreamingText] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  const resultsRef = useRef(null);
+  const hasScrolledRef = useRef(false);
+
+  // Scroll to the rewrite the first time it starts streaming, so the user sees
+  // feedback is being generated rather than waiting blindly.
+  useEffect(() => {
+    if (streamingText && !hasScrolledRef.current && resultsRef.current) {
+      hasScrolledRef.current = true;
+      resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [streamingText]);
 
   useEffect(() => {
     (async () => {
@@ -101,6 +113,7 @@ export default function Practice() {
     setError(null);
     setResult(null);
     setStreamingText("");
+    hasScrolledRef.current = false;
     try {
       const res = await fetch("/api/practice/stream", {
         method: "POST",
@@ -269,7 +282,7 @@ export default function Practice() {
 
       {/* RESULTS — dark */}
       {(result || streamingText) && (
-        <section className="bg-ink text-white">
+        <section ref={resultsRef} className="bg-ink text-white scroll-mt-16">
           <div className="max-w-[1200px] mx-auto px-6 py-24">
             <div className="max-w-2xl mb-12 animate-fadeUp">
               <h2 className="headline-serif text-4xl sm:text-5xl text-white mt-4">
