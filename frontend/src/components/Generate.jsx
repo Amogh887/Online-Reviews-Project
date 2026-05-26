@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import ElementPill from "./ElementPill";
+import { SAMPLE_REVIEWS } from "../lib/sampleReviews";
+
+const snippet = (text) => {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= 120) return flat;
+  const cut = flat.slice(0, 120);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[.,;:!?]+$/, "") + "…";
+};
 
 export default function Generate() {
   const [review, setReview] = useState("");
@@ -12,6 +20,17 @@ export default function Generate() {
 
   const resultsRef = useRef(null);
   const hasScrolledRef = useRef(false);
+  const textareaRef = useRef(null);
+
+  const sampleReviews = SAMPLE_REVIEWS.filter((r) => r.type === reviewType);
+
+  const useSample = (sample) => {
+    setReview(sample.text);
+    setResult(null);
+    setStreamingText("");
+    setError(null);
+    textareaRef.current?.focus();
+  };
 
   // Scroll to the results the first time content starts streaming in, so the
   // user can see the response is being generated rather than waiting blindly.
@@ -91,7 +110,9 @@ export default function Generate() {
       {/* HERO - dark */}
       <section className="bg-ink text-white">
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
-          <div className="max-w-3xl animate-fadeUp">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-x-12 gap-y-14 items-start">
+            <div className="min-w-0">
+          <div className="animate-fadeUp">
             <h1 className="headline-serif text-5xl sm:text-6xl text-white mt-5">
               A model reply, written <em>by the research</em>.
             </h1>
@@ -132,6 +153,7 @@ export default function Generate() {
 
             <div>
               <textarea
+                ref={textareaRef}
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
                 rows={6}
@@ -157,10 +179,41 @@ export default function Generate() {
           </form>
 
           {error && (
-            <div className="mt-8 max-w-3xl rounded-lg border border-red-900 bg-red-950/40 p-4 text-sm text-red-300">
+            <div className="mt-8 rounded-lg border border-red-900 bg-red-950/40 p-4 text-sm text-red-300">
               <strong>Error:</strong> {error}
             </div>
           )}
+            </div>
+
+            <aside className="animate-fadeUp lg:pt-2">
+              <p className="text-xs font-mono uppercase tracking-[0.18em] text-amber-accent mb-1.5">
+                Try one of these
+              </p>
+              <p className="text-sm text-ink-500 mb-5 leading-relaxed">
+                Real guest reviews. Click one to drop it into the box.
+              </p>
+              <div key={reviewType} className="space-y-3 animate-slideIn">
+                {sampleReviews.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => useSample(s)}
+                    className="group block w-full text-left rounded-lg bg-ink-800 border border-ink-700 p-4 transition-all duration-150 hover:border-amber-accent hover:bg-ink-700/50 hover:-translate-y-0.5"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-xs font-mono uppercase tracking-wide text-amber-accent">
+                        {s.topic}
+                      </span>
+                      <span className="text-ink-500 group-hover:text-amber-accent transition-colors" aria-hidden>
+                        →
+                      </span>
+                    </div>
+                    <p className="text-sm text-ink-400 leading-snug">{snippet(s.text)}</p>
+                  </button>
+                ))}
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 
