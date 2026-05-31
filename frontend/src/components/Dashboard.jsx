@@ -122,7 +122,14 @@ export default function Dashboard() {
         <div className="max-w-[1200px] mx-auto px-6 py-24 sm:py-28">
           <div className="max-w-3xl animate-fadeUp">
             <h1 className="headline-serif text-5xl sm:text-6xl text-white">
-              How response to reviews impacts future ratings and sales.
+              How response to reviews{" "}
+              <span
+                className="text-amber-accent"
+                style={{ background: "rgba(201,168,76,0.18)", borderRadius: "3px", padding: "0 4px" }}
+              >
+                impacts future ratings and sales
+              </span>
+              .
             </h1>
             <p className="text-ink-400 text-lg mt-6 leading-relaxed max-w-2xl">
               A large-scale causal study of 5.4M hotel reviews across 4,910 properties over 12 years.

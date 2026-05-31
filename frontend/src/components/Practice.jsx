@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ElementPill from "./ElementPill";
-import { labelFor } from "../lib/elements";
+import { labelFor, ELEMENT_LABELS } from "../lib/elements";
+
+const formatOverall = (text) => {
+  let out = text;
+  for (const [key, label] of Object.entries(ELEMENT_LABELS)) {
+    out = out.replace(new RegExp(key, "g"), label);
+  }
+  return out;
+};
 
 const CHANGE_BADGES = {
   added:        { label: "Added",        cls: "bg-[#5b8a5a]/15 text-[#3f6b3e] border-[#5b8a5a]/40" },
@@ -318,7 +326,7 @@ export default function Practice() {
               </h2>
               {result?.overall && (
                 <p className="text-ink-400 text-base mt-6 leading-relaxed border-l-2 border-amber-accent pl-5">
-                  {result.overall}
+                  {formatOverall(result.overall)}
                 </p>
               )}
             </div>
