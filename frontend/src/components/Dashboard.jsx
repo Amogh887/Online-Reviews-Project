@@ -123,10 +123,7 @@ export default function Dashboard() {
           <div className="max-w-3xl animate-fadeUp">
             <h1 className="headline-serif text-5xl sm:text-6xl text-white">
               How response to reviews{" "}
-              <span
-                className="text-amber-accent"
-                style={{ background: "rgba(201,168,76,0.18)", borderRadius: "3px", padding: "0 4px" }}
-              >
+              <span className="text-amber-accent">
                 impacts future ratings and sales
               </span>
               .
