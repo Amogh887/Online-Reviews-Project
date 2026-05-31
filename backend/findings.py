@@ -50,7 +50,7 @@ FINDINGS = {
             "tip_bad": "Your response appears generic. Addressing the specific issues mentioned in the review (e.g., room quality, staff, noise) improves ratings by 0.43% and revenue by 2.5%.",
         },
         "style_matching": {
-            "label": "Style Matching",
+            "label": "Mimicry",
             "rating": +0.0037,
             "revenue": -0.001,
             "direction": "mixed",
@@ -106,7 +106,7 @@ FINDINGS = {
             "tip_bad": "Your response seems generic. Referencing what the guest specifically praised (staff, breakfast, location, etc.) improves ratings by 0.39% and revenue by 4.6%.",
         },
         "style_matching": {
-            "label": "Style Matching",
+            "label": "Mimicry",
             "rating": +0.011,
             "revenue": -0.054,
             "direction": "mixed",
@@ -178,7 +178,7 @@ CHART_DATA = {
     "ratings": [
         {"element": "Problem Acceptance", "negative": 0.74, "positive": None},
         {"element": "Response Tailoring", "negative": 0.43, "positive": 0.39},
-        {"element": "Style Matching", "negative": 0.37, "positive": 1.10},
+        {"element": "Mimicry", "negative": 0.37, "positive": 1.10},
         {"element": "Taking Responsibility", "negative": 0.14, "positive": None},
         {"element": "Apology", "negative": 0.05, "positive": -0.04},
         {"element": "Loyalty", "negative": -0.06, "positive": 0.06},
@@ -193,7 +193,7 @@ CHART_DATA = {
         {"element": "Loyalty", "negative": -0.02, "positive": -0.20},
         {"element": "Regret", "negative": -0.40, "positive": None},
         {"element": "Action Promises", "negative": -1.70, "positive": None},
-        {"element": "Style Matching", "negative": -0.10, "positive": -5.40},
+        {"element": "Mimicry", "negative": -0.10, "positive": -5.40},
     ],
 }
 

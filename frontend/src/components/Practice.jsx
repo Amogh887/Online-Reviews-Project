@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ElementPill from "./ElementPill";
 import { labelFor } from "../lib/elements";
 
@@ -37,6 +37,11 @@ export default function Practice() {
   const [streamingText, setStreamingText] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  const [elementTab, setElementTab] = useState("original");
+  const [practiceCount, setPracticeCount] = useState(() =>
+    parseInt(sessionStorage.getItem("practiceCount") || "0")
+  );
 
   const resultsRef = useRef(null);
   const hasScrolledRef = useRef(false);
@@ -106,13 +111,16 @@ export default function Practice() {
     }
   };
 
+  const MAX_PRACTICES = 3;
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!currentSample || !response.trim()) return;
+    if (!currentSample || !response.trim() || practiceCount >= MAX_PRACTICES) return;
     setLoading(true);
     setError(null);
     setResult(null);
     setStreamingText("");
+    setElementTab("original");
     hasScrolledRef.current = false;
     try {
       const res = await fetch("/api/practice/stream", {
@@ -152,6 +160,11 @@ export default function Practice() {
             if (dataLine) {
               const metadata = JSON.parse(dataLine.slice(6));
               setResult(metadata);
+              setPracticeCount((prev) => {
+                const next = prev + 1;
+                sessionStorage.setItem("practiceCount", String(next));
+                return next;
+              });
             }
           }
         }
@@ -166,6 +179,18 @@ export default function Practice() {
   const elements = result?.detected_elements ?? {};
   const meta = result?.detected_elements_meta ?? {};
   const changes = result?.changes ?? [];
+
+  const revisedElements = useMemo(() => {
+    if (!result) return {};
+    const revised = { ...elements };
+    for (const change of changes) {
+      if (change.action === "added") revised[change.element] = true;
+      else if (change.action === "removed") revised[change.element] = false;
+      else if (change.action === "strengthened") revised[change.element] = true;
+      else if (change.action === "softened") revised[change.element] = 0.3;
+    }
+    return revised;
+  }, [result, elements, changes]);
 
   return (
     <>
@@ -224,9 +249,6 @@ export default function Practice() {
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </div>
-                {currentSample?.topic && (
-                  <span className="text-xs text-ink-500 font-mono">{currentSample.topic}</span>
-                )}
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={pickCuratedRandom} disabled={sampleLoading}
@@ -257,19 +279,25 @@ export default function Practice() {
               />
             </div>
 
-            <button type="submit" disabled={loading || !currentSample || !response.trim()} className="btn-primary">
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Analyzing…
-                </>
-              ) : (
-                <>Get coaching feedback <span aria-hidden>→</span></>
-              )}
-            </button>
+            {practiceCount >= MAX_PRACTICES ? (
+              <p className="text-sm text-ink-600 italic">
+                Session limit reached. You can use the practice coach up to {MAX_PRACTICES} times per session.
+              </p>
+            ) : (
+              <button type="submit" disabled={loading || !currentSample || !response.trim()} className="btn-primary">
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Analyzing…
+                  </>
+                ) : (
+                  <>Get coaching feedback <span aria-hidden>→</span> ({MAX_PRACTICES - practiceCount} left)</>
+                )}
+              </button>
+            )}
 
             {error && (
               <div className="rounded-lg border border-red-400/40 bg-red-50 p-4 text-sm text-red-800">
@@ -307,11 +335,32 @@ export default function Practice() {
               </div>
             </div>
 
-            {/* Element pills */}
+            {/* Element pills - tabbed */}
             <div className="mb-12 animate-fadeUp">
-              <h3 className="font-serif text-2xl font-bold text-white mb-4">Elements in your response</h3>
+              <div className="flex border-b border-ink-700 mb-5">
+                <button
+                  onClick={() => setElementTab("original")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                    elementTab === "original"
+                      ? "text-white border-amber-accent"
+                      : "text-ink-400 border-transparent hover:text-white"
+                  }`}
+                >
+                  Elements in your original response
+                </button>
+                <button
+                  onClick={() => setElementTab("revised")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                    elementTab === "revised"
+                      ? "text-white border-amber-accent"
+                      : "text-ink-400 border-transparent hover:text-white"
+                  }`}
+                >
+                  Elements in the revised response
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(elements).map(([key, value]) => (
+                {Object.entries(elementTab === "original" ? elements : revisedElements).map(([key, value]) => (
                   <ElementPill
                     key={key}
                     elementKey={key}

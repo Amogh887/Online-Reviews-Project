@@ -9,6 +9,8 @@ const snippet = (text) => {
   return cut.slice(0, cut.lastIndexOf(" ")).replace(/[.,;:!?]+$/, "") + "…";
 };
 
+const MAX_GENERATES = 3;
+
 export default function Generate() {
   const [review, setReview] = useState("");
   const [reviewType, setReviewType] = useState("negative");
@@ -17,6 +19,9 @@ export default function Generate() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [generateCount, setGenerateCount] = useState(() =>
+    parseInt(sessionStorage.getItem("generateCount") || "0")
+  );
 
   const resultsRef = useRef(null);
   const hasScrolledRef = useRef(false);
@@ -43,7 +48,7 @@ export default function Generate() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!review.trim()) return;
+    if (!review.trim() || generateCount >= MAX_GENERATES) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -84,6 +89,11 @@ export default function Generate() {
             if (dataLine) {
               const metadata = JSON.parse(dataLine.slice(6));
               setResult(metadata);
+              setGenerateCount((prev) => {
+                const next = prev + 1;
+                sessionStorage.setItem("generateCount", String(next));
+                return next;
+              });
             }
           }
         }
@@ -149,6 +159,9 @@ export default function Generate() {
                   Positive (4–5★)
                 </button>
               </div>
+              <p className="text-xs text-ink-500 mt-2">
+                Select the review type above before pasting your review.
+              </p>
             </div>
 
             <div>
@@ -163,19 +176,25 @@ export default function Generate() {
               />
             </div>
 
-            <button type="submit" disabled={loading || !review.trim()} className="btn-primary">
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Generating…
-                </>
-              ) : (
-                <>Generate model response <span aria-hidden>→</span></>
-              )}
-            </button>
+            {generateCount >= MAX_GENERATES ? (
+              <p className="text-sm text-ink-400 italic">
+                Session limit reached. You can generate up to {MAX_GENERATES} responses per session.
+              </p>
+            ) : (
+              <button type="submit" disabled={loading || !review.trim()} className="btn-primary">
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Generating…
+                  </>
+                ) : (
+                  <>Generate model response <span aria-hidden>→</span> ({MAX_GENERATES - generateCount} left)</>
+                )}
+              </button>
+            )}
           </form>
 
           {error && (

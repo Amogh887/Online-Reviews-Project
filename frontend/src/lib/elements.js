@@ -4,7 +4,7 @@ export const ELEMENT_LABELS = {
   regret: "Regret",
   action: "Action Promises",
   response_tailoring: "Response Tailoring",
-  style_matching: "Style Matching",
+  style_matching: "Mimicry",
   thanks: "Thanks",
   loyalty: "Loyalty Mention",
   revisit_request: "Revisit Request",
