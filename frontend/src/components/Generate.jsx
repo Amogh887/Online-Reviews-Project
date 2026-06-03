@@ -106,14 +106,24 @@ export default function Generate() {
   };
 
   const copyResponse = async () => {
-    if (!result?.response) return;
-    await navigator.clipboard.writeText(result.response);
+    const text = result?.response || streamingText;
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
   const usedMeta = result?.elements_used_meta ?? {};
   const avoidedMeta = result?.elements_avoided_meta ?? {};
+
+  const elementsUsed = result?.elements_used ?? [];
+  const elementsAvoided = (() => {
+    const raw = result?.elements_avoided ?? [];
+    if (!elementsUsed.includes("style_matching") && !raw.includes("style_matching")) {
+      return [...raw, "style_matching"];
+    }
+    return raw;
+  })();
 
   return (
     <>
@@ -284,11 +294,11 @@ export default function Generate() {
                 </div>
               )}
 
-              {result?.elements_used?.length > 0 && (
+              {elementsUsed.length > 0 && (
                 <div className="card lg:col-span-2">
                   <h3 className="font-serif text-2xl font-bold text-ink mt-2 mb-4">Elements applied</h3>
                   <div className="flex flex-wrap gap-2">
-                    {result.elements_used.map((key) => (
+                    {elementsUsed.map((key) => (
                       <ElementPill
                         key={key}
                         elementKey={key}
@@ -302,11 +312,11 @@ export default function Generate() {
                 </div>
               )}
 
-              {result?.elements_avoided?.length > 0 && (
+              {elementsAvoided.length > 0 && (
                 <div className="card">
                   <h3 className="font-serif text-2xl font-bold text-ink mt-2 mb-4">Elements skipped</h3>
                   <div className="flex flex-wrap gap-2">
-                    {result.elements_avoided.map((key) => (
+                    {elementsAvoided.map((key) => (
                       <ElementPill
                         key={key}
                         elementKey={key}
