@@ -302,6 +302,45 @@ If you modify `_GENERATE_INSTRUCTIONS` or `_PRACTICE_INSTRUCTIONS` in `backend/c
 - Vercel's serverless cold starts (~1–2s) may add latency on first request of the day
 - Eval workflow uses random samples and causal estimates; individual results may vary
 
+## Annotation Prompt Versioning (v1 → v2)
+
+Separately from the app, this project includes an annotation pipeline that uses Claude Haiku to label hotel management responses to negative reviews across three quality attributes — **accept** (acknowledges something went wrong), **regret** (genuine sorrow for the cause), and **responsibility** (active ownership / commitment to act). Each attribute has its own `annotate_<attr>.py` script with an attribute-specific system prompt and labeled few-shot examples.
+
+The prompts went through two iterations. The full self-contained scripts for each version live in two folders, **`annotation_v1/`** and **`annotation_v2/`** (each with the three `annotate_*.py` files plus a `results/` subfolder of prediction CSVs). These folders are shared out-of-band, not committed to this repo. Full write-ups: [`reports/ANNOTATION_FINDINGS_REPORT_v1.md`](reports/ANNOTATION_FINDINGS_REPORT_v1.md) and [`reports/ANNOTATION_FINDINGS_REPORT_v2.md`](reports/ANNOTATION_FINDINGS_REPORT_v2.md).
+
+### What changed in v2, and why
+
+v1 prompts used two anchor few-shot examples (one clear positive, one clear boilerplate negative) with relatively narrow rules. Evaluating v1 against the full 1,239-row training set exposed a large generalization gap — the model rejected many valid responses it hadn't been explicitly taught to recognize. v2 addressed this with three changes:
+
+- **Shared — third few-shot example.** Added an IHG "Manager on Duty" template response (positive on all three attributes) that sits between the clear-positive and clear-negative anchors. v1's two examples left this middle ground ambiguous.
+- **ACCEPT — broadened acknowledgment rules.** v2 explicitly counts "apologize for any inconvenience" / "sorry for any inconvenience" (generic phrasing still counts because of the *for* construction), "sorry you were not satisfied with [specific element]", and "apologize for the shortcomings/shortfalls". The negative boundary "apologize *that* your stay did not meet expectations" = 0 is documented as the canonical contrast.
+- **REGRET — the FOR vs THAT distinction.** v2 makes "apologize **FOR** [cause]" = 1 (owns the cause, even if generic) vs. "apologize **THAT** your stay did not meet expectations" = 0 (comments on the outcome) the explicit centerpiece, and counts "very sorry you were not satisfied with [element]".
+- **RESPONSIBILITY — recognize soft commitments (largest change).** v1 anchored on "please email me directly". v2 adds named-contact escalation ("please do not hesitate to ask the Manager on Duty"), "take the necessary actions…", "work diligently to rectify…", "enables us to target problem areas" + apology, "we welcome any opportunity to improve" + apology, and "I have taken note of your concerns"; and marks passive "all of our reviews are evaluated by management" = 0.
+
+### Impact
+
+**Test set (≈295–302 rows), F1:**
+
+| Attribute | v1 F1 | v2 F1 | Δ |
+|---|---|---|---|
+| Accept | 0.814 | 0.844 | +0.030 |
+| Regret | 0.722 | 0.777 | +0.055 |
+| Responsibility | 0.782 | 0.775 | −0.007 |
+| **Average** | **0.773** | **0.799** | **+0.026** |
+
+**Training set (≈1,119–1,153 rows), F1:**
+
+| Attribute | v1 F1 | v2 F1 | Δ | Recall v1 → v2 |
+|---|---|---|---|---|
+| Accept | 0.782 | 0.840 | +0.058 | 0.734 → 0.881 |
+| Regret | 0.701 | 0.785 | +0.084 | 0.636 → 0.812 |
+| Responsibility | 0.632 | 0.768 | +0.136 | 0.526 → 0.788 |
+| **Average** | **0.705** | **0.798** | **+0.093** | |
+
+The key signal is the **cross-split gap** (test F1 minus training F1), which measures over-calibration to the test set. It closed from **−0.068** average in v1 (responsibility alone was −0.150) to **−0.001** in v2 — test and training performance became statistically indistinguishable, evidence that v2's broader definitions generalize rather than just fitting the test distribution. Responsibility is flat on the *test* set (its specific cases were already the v1 iteration target) but improved most on the unseen training set.
+
+> Note on results CSVs: `annotation_v2/results/` holds the v2 test-set (`results_<attr>.csv`) and training-set (`results_<attr>_train_v2.csv`) predictions. `annotation_v1/results/` holds `results_training.csv` (v1 predictions for all three attributes) — the v1 per-attribute *test* CSVs were overwritten by the v2 runs, so the v1 test numbers above come from the report.
+
 ## License
 
 Internal research tool. Contact for licensing or usage outside Anthropic.
