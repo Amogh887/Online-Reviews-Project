@@ -1,3 +1,6 @@
+import json
+import logging
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -5,25 +8,34 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 load_dotenv()
 
 import coach
 from findings import CHART_DATA, HEADLINE_STATS
 
+logger = logging.getLogger("review_coach")
+
 app = FastAPI(title="Review Response Coach")
+
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174"
+    ).split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 class GenerateRequest(BaseModel):
-    review: str
+    review: str = Field(..., max_length=10000)
     review_type: str
 
     @field_validator("review_type")
@@ -42,8 +54,8 @@ class GenerateRequest(BaseModel):
 
 
 class PracticeRequest(BaseModel):
-    review: str
-    response: str
+    review: str = Field(..., max_length=10000)
+    response: str = Field(..., max_length=10000)
     review_type: str
 
     @field_validator("review_type")
@@ -76,16 +88,22 @@ class SampleGenRequest(BaseModel):
 async def api_generate(req: GenerateRequest):
     try:
         return coach.generate_response(req.review, req.review_type)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("generate failed")
+        raise HTTPException(status_code=500, detail="Internal error while generating the response.")
 
 
 @app.post("/api/practice")
 async def api_practice(req: PracticeRequest):
     try:
         return coach.practice_critique(req.review, req.response, req.review_type)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("practice failed")
+        raise HTTPException(status_code=500, detail="Internal error while critiquing the response.")
 
 
 @app.get("/api/samples")
@@ -99,8 +117,11 @@ async def api_samples(review_type: str | None = None):
 async def api_sample_generate(req: SampleGenRequest):
     try:
         return coach.generate_sample_review(req.review_type)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("sample generate failed")
+        raise HTTPException(status_code=500, detail="Internal error while generating a sample review.")
 
 
 @app.get("/api/dashboard")
@@ -113,8 +134,12 @@ async def api_dashboard():
 async def api_generate_stream(req: GenerateRequest):
     try:
         async def generate():
-            async for line in coach.stream_generate(req.review, req.review_type):
-                yield line
+            try:
+                async for line in coach.stream_generate(req.review, req.review_type):
+                    yield line
+            except Exception:
+                logger.exception("generate stream failed")
+                yield f"event: error\ndata: {json.dumps({'message': 'Stream failed.'})}\n\n"
 
         return StreamingResponse(
             generate(),
@@ -124,16 +149,23 @@ async def api_generate_stream(req: GenerateRequest):
                 "X-Accel-Buffering": "no",
             },
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("generate stream setup failed")
+        raise HTTPException(status_code=500, detail="Internal error while starting the stream.")
 
 
 @app.post("/api/practice/stream")
 async def api_practice_stream(req: PracticeRequest):
     try:
         async def generate():
-            async for line in coach.stream_practice(req.review, req.response, req.review_type):
-                yield line
+            try:
+                async for line in coach.stream_practice(req.review, req.response, req.review_type):
+                    yield line
+            except Exception:
+                logger.exception("practice stream failed")
+                yield f"event: error\ndata: {json.dumps({'message': 'Stream failed.'})}\n\n"
 
         return StreamingResponse(
             generate(),
@@ -143,8 +175,11 @@ async def api_practice_stream(req: PracticeRequest):
                 "X-Accel-Buffering": "no",
             },
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("practice stream setup failed")
+        raise HTTPException(status_code=500, detail="Internal error while starting the stream.")
 
 
 # Serve compiled React build (production)
