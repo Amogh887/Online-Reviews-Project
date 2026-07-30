@@ -1,3 +1,5 @@
+import json
+import logging
 import sys
 import os
 
@@ -13,6 +15,8 @@ import coach
 from findings import CHART_DATA, HEADLINE_STATS
 
 load_dotenv()
+
+logger = logging.getLogger("review_coach_api")
 
 app = FastAPI()
 
@@ -114,37 +118,39 @@ async def api_dashboard():
 # Streaming endpoints (SSE)
 @app.post("/api/generate/stream")
 async def api_generate_stream(req: GenerateRequest):
-    try:
-        async def generate():
+    async def generate():
+        try:
             async for line in coach.stream_generate(req.review, req.review_type):
                 yield line
+        except Exception as e:
+            logger.exception("generate stream failed")
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
 
-        return StreamingResponse(
-            generate(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no",
-            },
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.post("/api/practice/stream")
 async def api_practice_stream(req: PracticeRequest):
-    try:
-        async def generate():
+    async def generate():
+        try:
             async for line in coach.stream_practice(req.review, req.response, req.review_type):
                 yield line
+        except Exception as e:
+            logger.exception("practice stream failed")
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
 
-        return StreamingResponse(
-            generate(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no",
-            },
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

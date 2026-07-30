@@ -95,6 +95,10 @@ export default function Generate() {
                 return next;
               });
             }
+          } else if (eventLine === "event: error") {
+            const dataLine = dataLines.find((l) => l.startsWith("data: "));
+            const message = dataLine ? JSON.parse(dataLine.slice(6)).message : "Stream failed.";
+            throw new Error(message);
           }
         }
       }
