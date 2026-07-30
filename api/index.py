@@ -75,7 +75,7 @@ class SampleGenRequest(BaseModel):
         return v
 
 
-@app.post("/api/generate")
+@app.post("/generate")
 async def api_generate(req: GenerateRequest):
     try:
         return coach.generate_response(req.review, req.review_type)
@@ -83,7 +83,7 @@ async def api_generate(req: GenerateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/practice")
+@app.post("/practice")
 async def api_practice(req: PracticeRequest):
     try:
         return coach.practice_critique(req.review, req.response, req.review_type)
@@ -91,14 +91,14 @@ async def api_practice(req: PracticeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/samples")
+@app.get("/samples")
 async def api_samples(review_type: str | None = None):
     if review_type and review_type not in ("positive", "negative"):
         raise HTTPException(status_code=400, detail="review_type must be 'positive', 'negative', or omitted")
     return {"samples": coach.list_samples(review_type)}
 
 
-@app.post("/api/samples/generate")
+@app.post("/samples/generate")
 async def api_sample_generate(req: SampleGenRequest):
     try:
         return coach.generate_sample_review(req.review_type)
@@ -106,13 +106,13 @@ async def api_sample_generate(req: SampleGenRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/dashboard")
+@app.get("/dashboard")
 async def api_dashboard():
     return {"headline": HEADLINE_STATS, "charts": CHART_DATA}
 
 
 # Streaming endpoints (SSE)
-@app.post("/api/generate/stream")
+@app.post("/generate/stream")
 async def api_generate_stream(req: GenerateRequest):
     try:
         async def generate():
@@ -131,7 +131,7 @@ async def api_generate_stream(req: GenerateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/practice/stream")
+@app.post("/practice/stream")
 async def api_practice_stream(req: PracticeRequest):
     try:
         async def generate():
