@@ -76,8 +76,21 @@ def _system_blocks(mode_instructions: str) -> list[dict]:
     ]
 
 
+def _loads_lenient(s: str) -> dict:
+    s = (s or "").strip()
+    if not s:
+        return {}
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(s)
+    except (json.JSONDecodeError, ValueError):
+        return {}
+    return obj if isinstance(obj, dict) else {}
+
+
 def _parse_json_response(message) -> dict:
     """Parse response with format: [visible text]\n---JSON---\n{metadata json}"""
+    if not message.content:
+        return {}
     raw = message.content[0].text.strip()
 
     if "---JSON---" in raw:
@@ -93,7 +106,7 @@ def _parse_json_response(message) -> dict:
         lines = json_text.split("\n")
         json_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
 
-    result = json.loads(json_text)
+    result = _loads_lenient(json_text)
     if response_text:
         result["response"] = response_text
     return result
@@ -138,8 +151,30 @@ RESPONSE FORMAT:
 {
   "elements_used": ["<element_key>", ...],
   "elements_avoided": ["<element_key>", ...],
+  "style_matching": <float 0.0-1.0, how closely the response echoes the guest's own wording and phrasing. Do not include "style_matching" in elements_used or elements_avoided, report it only in this field>,
   "rationale": "<1–2 sentences explaining the strategic choices>"
 }"""
+
+
+def _place_style_matching(result: dict) -> None:
+    """Move the model's numeric style_matching score into elements_used/elements_avoided.
+
+    Keeps style_matching consistent with every other element (a plain list
+    membership backed by a real measurement) instead of a separate float
+    the frontend has to special-case.
+    """
+    score = result.pop("style_matching", None)
+    if score is None:
+        return
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        return
+    used = result.setdefault("elements_used", [])
+    avoided = result.setdefault("elements_avoided", [])
+    if "style_matching" in used or "style_matching" in avoided:
+        return
+    (used if score > 0.3 else avoided).append("style_matching")
 
 
 def generate_response(review: str, review_type: str) -> dict:
@@ -158,6 +193,7 @@ def generate_response(review: str, review_type: str) -> dict:
     )
 
     result = _parse_json_response(message)
+    _place_style_matching(result)
 
     used_meta = _attach_meta({k: True for k in result.get("elements_used", [])}, review_type)
     avoided_meta = _attach_meta({k: True for k in result.get("elements_avoided", [])}, review_type)
@@ -238,7 +274,8 @@ async def stream_generate(review: str, review_type: str):
             else:
                 json_raw = payload
 
-    metadata = json.loads(_strip_code_fence(json_raw))
+    metadata = _loads_lenient(_strip_code_fence(json_raw))
+    _place_style_matching(metadata)
     used_meta = _attach_meta({k: True for k in metadata.get("elements_used", [])}, review_type)
     avoided_meta = _attach_meta({k: True for k in metadata.get("elements_avoided", [])}, review_type)
     metadata["elements_used_meta"] = used_meta
@@ -272,7 +309,7 @@ async def stream_practice(review: str, response: str, review_type: str):
             else:
                 json_raw = payload
 
-    metadata = json.loads(_strip_code_fence(json_raw))
+    metadata = _loads_lenient(_strip_code_fence(json_raw))
     metadata["detected_elements_meta"] = _attach_meta(
         metadata.get("detected_elements", {}), review_type
     )

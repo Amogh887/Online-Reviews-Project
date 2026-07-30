@@ -121,13 +121,7 @@ export default function Generate() {
   const avoidedMeta = result?.elements_avoided_meta ?? {};
 
   const elementsUsed = result?.elements_used ?? [];
-  const elementsAvoided = (() => {
-    const raw = result?.elements_avoided ?? [];
-    if (!elementsUsed.includes("style_matching") && !raw.includes("style_matching")) {
-      return [...raw, "style_matching"];
-    }
-    return raw;
-  })();
+  const elementsAvoided = result?.elements_avoided ?? [];
 
   return (
     <>
